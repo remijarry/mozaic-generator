@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
+	_ "image/jpeg"
+	_ "image/png"
 	"log"
 	"os"
 
@@ -21,29 +22,49 @@ func main() {
 	averagedImages := make([]AveragedImage, 0, len(files))
 
 	for _, file := range files {
-		filePath := inputDir + "/" + file.Name()
-		img, err := imaging.Open(filePath)
 
+		filePath := inputDir + "/" + file.Name()
+
+		reader, err := os.Open(filePath)
 		if err != nil {
-			log.Fatalf("failed to open image: %v", err)
-			os.Exit(1)
+			log.Printf("Error opening file %s: %v", filePath, err)
+			continue
 		}
 
-		avgColor := getAverageColor(img)
+		defer reader.Close()
+
+		_, _, configErr := image.DecodeConfig(reader)
+
+		if configErr != nil {
+			log.Printf("Skipping %s: not a valid image format or corrupted: %v", filePath, configErr) // More descriptive log
+			continue
+		}
+
+		_, err = reader.Seek(0, 0)
+		if err != nil {
+			log.Printf("Error seeking file %s: %v", filePath, err)
+		}
+
+		img, err := imaging.Decode(reader)
+
+		if err != nil {
+			log.Printf("Error decoding image %s: %v", filePath, err)
+		}
+
+		r, g, b := getAverageColor(img)
 
 		averagedImages = append(averagedImages, AveragedImage{
-			R:    avgColor.R,
-			G:    avgColor.G,
-			B:    avgColor.B,
+			R:    r,
+			G:    g,
+			B:    b,
 			path: filePath,
 			used: false,
 		})
-
-		fmt.Printf("Average Color: %+v", avgColor)
 	}
 }
 
-func getAverageColor(img image.Image) RGB {
+// Return the image's average of R,G,B
+func getAverageColor(img image.Image) (int, int, int) {
 	var r, g, b, count float64
 
 	bounds := img.Bounds()
@@ -58,13 +79,11 @@ func getAverageColor(img image.Image) RGB {
 			count++
 		}
 	}
-	return RGB{
-		R: int(r / count),
-		G: int(g / count),
-		B: int(b / count),
-	}
+	return int(r / count), int(g / count), int(b / count)
+
 }
 
+// todo: rename, could it be merged with RGB struct?
 type AveragedImage struct {
 	R int
 	G int
@@ -72,10 +91,4 @@ type AveragedImage struct {
 
 	path string
 	used bool
-}
-
-type RGB struct {
-	R int
-	G int
-	B int
 }
