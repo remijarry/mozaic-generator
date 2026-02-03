@@ -1,15 +1,33 @@
 package main
 
 import (
+	"encoding/json"
 	"image"
 	"image/color"
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/disintegration/imaging"
 )
+
+type TileImage struct {
+	R int
+	G int
+	B int
+
+	path string
+	used bool
+}
+
+type Cache struct {
+	Signature string      `json:"signature"`
+	Tiles     []TileImage `json:"tiles"`
+}
 
 func main() {
 	inputDir := "input"
@@ -17,6 +35,25 @@ func main() {
 
 	if err != nil {
 		panic(err)
+	}
+
+	signature := GenerateFolderSignature(files)
+
+	cacheDir := "cache"
+	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+		os.Mkdir(cacheDir, 0755)
+	}
+
+	cacheFileName := "cache.json"
+	cacheFilePath := filepath.Join(cacheDir, cacheFileName)
+
+	var cache Cache
+
+	cacheFileContent, err := os.ReadFile(cacheFilePath)
+	cacheValid := false
+
+	if err == nil { // File read successfully
+		jsonErr := json.Unmarshal(cacheFileContent, &cache)
 	}
 
 	averagedImages := make([]TileImage, 0, len(files))
@@ -63,6 +100,16 @@ func main() {
 	}
 }
 
+func GenerateFolderSignature(files []os.DirEntry) string {
+	fileNames := []string{}
+	for _, file := range files {
+		fileNames = append(fileNames, file.Name())
+	}
+
+	sort.Strings(fileNames)
+	return strings.Join(fileNames, "")
+}
+
 // Return the image's average of R,G,B
 func getAverageColor(img image.Image) (int, int, int) {
 	var r, g, b, count float64
@@ -81,14 +128,4 @@ func getAverageColor(img image.Image) (int, int, int) {
 	}
 	return int(r / count), int(g / count), int(b / count)
 
-}
-
-// todo: rename, could it be merged with RGB struct?
-type TileImage struct {
-	R int
-	G int
-	B int
-
-	path string
-	used bool
 }
