@@ -18,8 +18,11 @@ func main() {
 		panic(err)
 	}
 
+	averagedImages := make([]AveragedImage, 0, len(files))
+
 	for _, file := range files {
-		img, err := imaging.Open(inputDir + "/" + file.Name())
+		filePath := inputDir + "/" + file.Name()
+		img, err := imaging.Open(filePath)
 
 		if err != nil {
 			log.Fatalf("failed to open image: %v", err)
@@ -27,11 +30,20 @@ func main() {
 		}
 
 		avgColor := getAverageColor(img)
+
+		averagedImages = append(averagedImages, AveragedImage{
+			R:    avgColor.R,
+			G:    avgColor.G,
+			B:    avgColor.B,
+			path: filePath,
+			used: false,
+		})
+
 		fmt.Printf("Average Color: %+v", avgColor)
 	}
 }
 
-func getAverageColor(img image.Image) color.Color {
+func getAverageColor(img image.Image) RGB {
 	var r, g, b, count float64
 
 	bounds := img.Bounds()
@@ -46,10 +58,24 @@ func getAverageColor(img image.Image) color.Color {
 			count++
 		}
 	}
-	return color.RGBA{
-		R: uint8(r / count),
-		G: uint8(g / count),
-		B: uint8(b / count),
-		A: 255,
+	return RGB{
+		R: int(r / count),
+		G: int(g / count),
+		B: int(b / count),
 	}
+}
+
+type AveragedImage struct {
+	R int
+	G int
+	B int
+
+	path string
+	used bool
+}
+
+type RGB struct {
+	R int
+	G int
+	B int
 }
