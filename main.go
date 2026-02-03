@@ -19,7 +19,7 @@ func main() {
 		panic(err)
 	}
 
-	averagedImages := make([]AveragedImage, 0, len(files))
+	averagedImages := make([]TileImage, 0, len(files))
 
 	for _, file := range files {
 
@@ -53,7 +53,7 @@ func main() {
 
 		r, g, b := getAverageColor(img)
 
-		averagedImages = append(averagedImages, AveragedImage{
+		averagedImages = append(averagedImages, TileImage{
 			R:    r,
 			G:    g,
 			B:    b,
@@ -84,7 +84,7 @@ func getAverageColor(img image.Image) (int, int, int) {
 }
 
 // todo: rename, could it be merged with RGB struct?
-type AveragedImage struct {
+type TileImage struct {
 	R int
 	G int
 	B int
