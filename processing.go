@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"image"
+	"io"
 	_ "image/jpeg"
 	_ "image/png"
 	"log"
@@ -45,13 +46,13 @@ func processImages(inputDir string) ([]TileImage, error) {
 		defer reader.Close()
 
 		// Check if it's a valid image format without decoding the whole file.
-		if _, _, err := image.DecodeConfig(reader); err != nil {
+		if !isValidFormat(reader) {
 			// Not a valid image, or not a format we have a decoder for.
 			continue
 		}
 
 		// Rewind the file to decode the full image.
-		if _, err := reader.Seek(0, 0); err != nil {
+		if err := rewindFilePointer(reader); err != nil {
 			log.Printf("Could not seek in %s, skipping: %v", filePath, err)
 			continue
 		}
@@ -89,4 +90,16 @@ func getAverageColor(img image.Image) RGB {
 		G: int(g / count),
 		B: int(b / count),
 	}
+}
+
+// isValidFormat checks if a reader contains a valid, decodable image.
+func isValidFormat(reader io.Reader) bool {
+	_, _, err := image.DecodeConfig(reader)
+	return err == nil
+}
+
+// rewindFilePointer moves the seeker's offset to the beginning of the file.
+func rewindFilePointer(seeker io.Seeker) error {
+	_, err := seeker.Seek(0, 0)
+	return err
 }
