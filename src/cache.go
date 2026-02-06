@@ -8,16 +8,18 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/remay/mozaic-generator/pkg/imageutils"
 )
 
 // Cache is the top-level struct for our cache file.
 type Cache struct {
-	Signature string      `json:"signature"`
-	Tiles     []TileImage `json:"tiles"`
+	Signature string             `json:"signature"`
+	Tiles     []imageutils.TileImage `json:"tiles"`
 }
 
 // loadOrCreateTiles orchestrates loading tiles from cache or generating them if the cache is invalid.
-func loadOrCreateTiles(inputDir string) ([]TileImage, error) {
+func loadOrCreateTiles(inputDir string) ([]imageutils.TileImage, error) {
 	cacheDir := "cache"
 	cacheFileName := "cache.json"
 	cacheFilePath := filepath.Join(cacheDir, cacheFileName)

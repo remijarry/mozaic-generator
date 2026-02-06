@@ -3,38 +3,26 @@ package main
 import (
 	"fmt"
 	"image"
-	"io"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/remay/mozaic-generator/pkg/imageutils"
+
 	"github.com/disintegration/imaging"
 )
 
-// RGB represents a simple RGB color.
-type RGB struct {
-	R int `json:"r"`
-	G int `json:"g"`
-	B int `json:"b"`
-}
-
-// TileImage holds the data for a single tile, including its average color and file path.
-type TileImage struct {
-	RGB  `json:"rgb"`
-	Path string `json:"path"`
-	Used bool   `json:"used"`
-}
-
 // processImages reads all valid images from a directory and calculates their average color.
-func processImages(inputDir string) ([]TileImage, error) {
+func processImages(inputDir string) ([]imageutils.TileImage, error) {
 	files, err := os.ReadDir(inputDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read input directory %s: %w", inputDir, err)
 	}
 
-	var tiles []TileImage
+	var tiles []imageutils.TileImage
 	for _, file := range files {
 		filePath := filepath.Join(inputDir, file.Name())
 
@@ -63,17 +51,16 @@ func processImages(inputDir string) ([]TileImage, error) {
 			continue
 		}
 
-		tiles = append(tiles, TileImage{
+		tiles = append(tiles, imageutils.TileImage{
 			RGB:  getAverageColor(img),
 			Path: filePath,
-			Used: false,
 		})
 	}
 	return tiles, nil
 }
 
 // getAverageColor calculates the average RGB values for a given image.
-func getAverageColor(img image.Image) RGB {
+func getAverageColor(img image.Image) imageutils.RGB {
 	bounds := img.Bounds()
 	var r, g, b, count uint64
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
@@ -85,7 +72,7 @@ func getAverageColor(img image.Image) RGB {
 			count++
 		}
 	}
-	return RGB{
+	return imageutils.RGB{
 		R: int(r / count),
 		G: int(g / count),
 		B: int(b / count),
